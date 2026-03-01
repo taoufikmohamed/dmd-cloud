@@ -8,68 +8,55 @@ on:
   workflow_dispatch: 
 
 jobs:
-  build-and-test:
+  docker-build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          python-version: '3.10'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install ai_service deps
-        working-directory: ai_service
-        run: |
-          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
-
-      - name: Install webhook_service deps
-        working-directory: webhook_service
-        run: |
-          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
-
-      - name: Python checks (placeholder)
-        run: echo "No tests configured; add test commands as needed"
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.20'
-
-      - name: Build orchestrator
-        working-directory: orchestrator
-        run: go build ./...
-
-      - name: Log into container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.REGISTRY_DOMAIN }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - name: Build and Push
+      # -------------------------------
+      # Build & Push AI Service
+      # -------------------------------
+      - name: Build and Push AI Service
         uses: docker/build-push-action@v5
         with:
           context: ./ai_service
           push: true
           tags: |
-         
-            ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}:ai-service:latest
-             #${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
 
-      
-
-      - name: Build and push webhook_service image
-        uses: docker/build-push-action@v4
+      # -------------------------------
+      # Build & Push Webhook Service
+      # -------------------------------
+      - name: Build and Push Webhook Service
+        uses: docker/build-push-action@v5
         with:
           context: ./webhook_service
           push: true
-          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}/webhook_service:latest
-
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
+            
+            
+      # -------------------------------
+      # Build & Push orchestrator image
+      # -------------------------------
+      
       - name: Build and push orchestrator image
         uses: docker/build-push-action@v4
         with:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
-          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}/orchestrator:latest
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
