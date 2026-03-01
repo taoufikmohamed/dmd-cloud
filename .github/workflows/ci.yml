@@ -54,7 +54,7 @@ jobs:
           push: true
           tags: |
          
-            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
+            ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}/ai-service:latest
              #${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
 
       
@@ -64,7 +64,7 @@ jobs:
         with:
           context: ./webhook_service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/webhook_service:latest
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}/webhook_service:latest
 
       - name: Build and push orchestrator image
         uses: docker/build-push-action@v4
@@ -72,4 +72,4 @@ jobs:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKER_USERNAME }}/orchestrator:latest
