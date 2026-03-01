@@ -88,3 +88,4 @@ flowchart LR
 - Keep `ai-service` as `ClusterIP` when only internal service-to-service traffic is needed.
 - Change `Service` type to `LoadBalancer` or use Ingress if you need controlled external access.
 - Test-webhook for simulation
+- Test
