@@ -1,0 +1,13 @@
+{
+  "repository": {
+    "full_name": "my-org/my-repo"
+  },
+  "head_commit": {
+    "id": "abc123",
+    "message": "Update README",
+    "added": ["README.md"],
+    "removed": [],
+    "modified": ["main.py"]
+  },
+  "diff": "diff --git a/main.py b/main.py\nindex e69de29..b7e23f2 100644\n--- a/main.py\n+++ b/main.py\n@@ -0,0 +1,5 @@\n+print('Hello world')"
+}
