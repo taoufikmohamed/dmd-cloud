@@ -48,11 +48,20 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build and push ai_service image
+        # uses: docker/build-push-action@v4
+        # with:
+        #   context: ./ai_service
+        #   push: true
+        #   tags: ${{ secrets.REGISTRY_DOMAIN }}/ai_service:${{ github.sha }}
+
         uses: docker/build-push-action@v4
         with:
-          context: ./ai_service
-          push: true
-          tags: ${{ secrets.REGISTRY_DOMAIN }}/ai_service:${{ github.sha }}
+            context: ./ai_service
+            push: true
+            tags: |
+              ${{ secrets.DOCKERHUB_USERNAME }}/ai_service:${{ github.sha }}
+              ${{ secrets.DOCKERHUB_USERNAME }}/ai_service:latest
+      
 
       - name: Build and push webhook_service image
         uses: docker/build-push-action@v4
