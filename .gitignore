@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+venv3/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Virtualenv
+.venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets and env
+.env
+*.env
+secrets/
+*.pem
+*.key
+*.crt
+*.p12
+
+# Docker
+.docker/
+.dockerignore
+.envrc
+docker-compose.override.yml
+docker-compose.*.yml
+docker-compose.yml
+**/docker-compose.override.yml
+**/docker-compose.yml
+
+# Docker credentials
+.docker/config.json
+
+# Kubernetes & kube config
+.kube/
+Kubeconfig
+kubeconfig
+.kubeconfig
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+terraform.tfvars.json
+crash.log
+override.tf
+override.tf.json
+*.tfvars
+
+# Go
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Python packaging
+pip-wheel-metadata/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Misc
+node_modules/
+coverage/
+htmlcov/

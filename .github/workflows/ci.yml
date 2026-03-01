@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install ai_service deps
+        working-directory: ai_service
+        run: |
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+
+      - name: Install webhook_service deps
+        working-directory: webhook_service
+        run: |
+          if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
+
+      - name: Python checks (placeholder)
+        run: echo "No tests configured; add test commands as needed"
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+
+      - name: Build orchestrator
+        working-directory: orchestrator
+        run: go build ./...
+
+      - name: Log into container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.REGISTRY_DOMAIN }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push ai_service image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./ai_service
+          push: true
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/ai_service:${{ github.sha }}
+
+      - name: Build and push webhook_service image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./webhook_service
+          push: true
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/webhook_service:${{ github.sha }}
+
+      - name: Build and push orchestrator image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./orchestrator
+          file: ./orchestrator/Dockerfile
+          push: true
+          tags: ${{ secrets.REGISTRY_DOMAIN }}/orchestrator:${{ github.sha }}
