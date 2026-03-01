@@ -5,6 +5,7 @@ import os
 
 app = FastAPI()
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8000")
+AI_SERVICE_TIMEOUT_SECONDS = float(os.getenv("AI_SERVICE_TIMEOUT_SECONDS", "75"))
 
 @app.post("/webhook/github")
 async def github_webhook(request: Request):
@@ -12,7 +13,7 @@ async def github_webhook(request: Request):
     diff = "Sample diff for testing"
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(AI_SERVICE_TIMEOUT_SECONDS)) as client:
             response = await client.post(
                 f"{AI_SERVICE_URL}/generate-pipeline",
                 json={"diff": diff}

@@ -14,9 +14,11 @@ When your code repository sends a webhook about a change, the webhook service fo
 - `webhook_service` (FastAPI, port 8001)
   - Exposes `POST /webhook/github`
   - Calls the AI service using `AI_SERVICE_URL` (default: `http://ai-service:8000`)
+  - Config: `AI_SERVICE_TIMEOUT_SECONDS` (default: `75.0` seconds)
 - `ai_service` (FastAPI, port 8000)
   - Exposes `GET /health` and `POST /generate-pipeline`
   - Calls DeepSeek API using `DEEPSEEK_API_KEY` from Kubernetes Secret
+  - Config: `DEEPSEEK_TIMEOUT_SECONDS` (default: `60.0` seconds)
 - `k8s/`
   - Deployments and Services for both apps
   - `webhook-service` is externally reachable (`NodePort`)
@@ -87,5 +89,8 @@ flowchart LR
 
 - Keep `ai-service` as `ClusterIP` when only internal service-to-service traffic is needed.
 - Change `Service` type to `LoadBalancer` or use Ingress if you need controlled external access.
-- Test-webhook for simulation
-- Test
+- **Timeout Configuration**: DeepSeek API responses can take 40-60 seconds. The defaults are:
+  - `AI_SERVICE_TIMEOUT_SECONDS=75` (webhook waiting for AI service)
+  - `DEEPSEEK_TIMEOUT_SECONDS=60` (AI service waiting for DeepSeek API)
+  - Adjust these if you experience timeout errors or if the external API is slower/faster.
+- Use `test-webhook.json` for local testing with curl or Postman.

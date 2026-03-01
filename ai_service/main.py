@@ -5,6 +5,7 @@ import requests
 
 app = FastAPI()
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_TIMEOUT_SECONDS = float(os.getenv("DEEPSEEK_TIMEOUT_SECONDS", "60"))
 
 @app.get("/health")
 def health():
@@ -30,11 +31,15 @@ def generate_pipeline(data: dict):
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.2
             },
-            timeout=30
+            timeout=DEEPSEEK_TIMEOUT_SECONDS
         )
         response.raise_for_status()
     except requests.Timeout:
         raise HTTPException(status_code=504, detail="DeepSeek API request timed out")
+    except requests.ConnectionError as exc:
+        if "Read timed out" in str(exc):
+            raise HTTPException(status_code=504, detail="DeepSeek API request timed out")
+        raise HTTPException(status_code=502, detail="DeepSeek API is unavailable")
     except requests.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"DeepSeek API returned {exc.response.status_code}")
     except requests.RequestException:
