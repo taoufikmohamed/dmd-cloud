@@ -3,7 +3,7 @@
 
 ## Objective
 
-This project receives GitHub webhook events, forwards the relevant code diff to an AI service, and returns AI-generated CI/CD pipeline output. 
+This project receives GitHub webhook events, forwards the relevant code diff to an AI service, and returns AI-generated CI/CD pipeline output.
 
 This project automatically turns code change notifications into ready-to-run CI/CD pipeline suggestions using an AI assistant.
 
@@ -87,3 +87,4 @@ flowchart LR
 
 - Keep `ai-service` as `ClusterIP` when only internal service-to-service traffic is needed.
 - Change `Service` type to `LoadBalancer` or use Ingress if you need controlled external access.
+- Test-webhook for simulation
