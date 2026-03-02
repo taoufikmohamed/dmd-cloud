@@ -94,7 +94,7 @@ flowchart LR
   - `DEEPSEEK_TIMEOUT_SECONDS=60` (AI service waiting for DeepSeek API)
   - Adjust these if you experience timeout errors or if the external API is slower/faster.
 - Use `test-webhook.json` for local testing with curl or Postman.
-- test
+- flow
         - GitHub push
            ↓
         Webhook receives
