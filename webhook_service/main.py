@@ -20,18 +20,47 @@ async def call_ai_async(payload: dict, retry_count: int = 0, max_retries: int = 
     """
     Call AI service asynchronously with retries and timeout handling.
     This runs in the background and does NOT block the webhook response.
+    
+    Extracts diff from webhook payload and calls AI service's /generate-pipeline endpoint.
     """
     try:
         logger.info(f"Processing webhook payload (attempt {retry_count + 1}/{max_retries + 1})")
         
+        # Extract diff from webhook payload
+        diff = payload.get("diff", "")
+        repo_name = payload.get("repository", {}).get("full_name", "unknown")
+        commit_msg = payload.get("head_commit", {}).get("message", "")
+        
+        if not diff:
+            logger.warning(f"No diff found in webhook payload for {repo_name}")
+            return
+        
+        logger.info(f"Extracted diff ({len(diff)} chars) from repository: {repo_name}")
+        
+        # Call AI service's /generate-pipeline endpoint
+        ai_request = {
+            "diff": diff,
+            "repository": repo_name,
+            "commit_message": commit_msg
+        }
+        
         async with httpx.AsyncClient(timeout=AI_SERVICE_TIMEOUT_SECONDS) as client:
+            logger.info(f"Calling AI service: POST {AI_SERVICE_URL}/generate-pipeline")
             response = await client.post(
-                AI_SERVICE_URL,
-                json=payload,
+                f"{AI_SERVICE_URL}/generate-pipeline",
+                json=ai_request,
                 timeout=AI_SERVICE_TIMEOUT_SECONDS
             )
             response.raise_for_status()
-            logger.info(f"Successfully sent payload to AI service: {response.status_code}")
+            
+            ai_response = response.json()
+            logger.info(f"Successfully generated pipeline from AI service")
+            logger.info(f"AI Response: {str(ai_response)[:500]}...")  # Log first 500 chars
+            
+            # Extract the generated pipeline from AI response
+            if "choices" in ai_response and len(ai_response["choices"]) > 0:
+                pipeline_content = ai_response["choices"][0].get("message", {}).get("content", "")
+                logger.info(f"Generated CI/CD Pipeline:\n{pipeline_content}")
             
     except httpx.TimeoutException as e:
         logger.error(f"Timeout calling AI service: {e}")
@@ -50,19 +79,31 @@ async def call_ai_async(payload: dict, retry_count: int = 0, max_retries: int = 
             logger.info(f"Retrying in {wait_time} seconds...")
             time.sleep(wait_time)
             await call_ai_async(payload, retry_count + 1, max_retries)
+        else:
+            logger.error("Max retries exceeded for AI service call")
 
 @app.post("/webhook/github")
 async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     """
-    GitHub webhook endpoint. Returns immediately, processes asynchronously.
-    GitHub gives us 30 seconds max - we respond in <<1 second.
+    GitHub webhook endpoint. Receives webhook, returns immediately, processes asynchronously.
+    
+    Flow:
+    1. GitHub sends POST with code diff
+    2. We immediately return 200 OK (< 1 second) to GitHub
+    3. Background task extracts diff
+    4. Background task calls AI service's /generate-pipeline endpoint
+    5. AI generates CI/CD pipeline and logs it
+    
+    GitHub gives us 30 seconds max - we respond in < 100ms.
     """
     try:
         payload = await request.json()
         
         # Log webhook receipt
         repo = payload.get("repository", {}).get("full_name", "unknown")
+        commit = payload.get("head_commit", {}).get("message", "unknown")
         logger.info(f"Received webhook for repository: {repo}")
+        logger.info(f"Commit message: {commit}")
         
         # Add background task - returns immediately without waiting
         background_tasks.add_task(call_ai_async, payload)
@@ -70,12 +111,12 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
         # IMMEDIATE response - returns instantly to GitHub
         return {
             "status": "received",
-            "message": "Webhook received and queued for processing"
+            "message": "Webhook received and queued for pipeline generation"
         }
         
     except Exception as e:
         logger.error(f"Error processing webhook: {e}")
-        # Still return 202 so GitHub doesn't retry
+        # Still return 200 so GitHub doesn't retry
         return {
             "status": "received",
             "message": "Webhook received (processing may have failed)"
