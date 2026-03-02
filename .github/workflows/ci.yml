@@ -32,7 +32,10 @@ jobs:
         with:
           context: ./ai_service
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
+          
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
 
@@ -44,21 +47,11 @@ jobs:
         with:
           context: ./webhook_service
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
-
-      # -------------------------------
-      # Delete old orchestrator image
-      # -------------------------------
-      - name: Delete old orchestrator image from Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: |
-          curl -X DELETE \
-            -u ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} \
-            "https://hub.docker.com/v2/repositories/${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator/"
-        continue-on-error: true
-            
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}            
       # -------------------------------
       # Build & Push orchestrator image
       # -------------------------------
@@ -69,4 +62,6 @@ jobs:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
