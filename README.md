@@ -95,3 +95,12 @@ flowchart LR
   - Adjust these if you experience timeout errors or if the external API is slower/faster.
 - Use `test-webhook.json` for local testing with curl or Postman.
 - test
+        - GitHub push
+           ↓
+        Webhook receives
+           ↓
+        Returns 200 immediately
+           ↓
+        Calls AI async
+           ↓
+        AI generates pipeline
