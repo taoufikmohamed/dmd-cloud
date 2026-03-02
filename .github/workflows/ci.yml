@@ -47,8 +47,8 @@ jobs:
         with:
           context: ./webhook_service
           push: true
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
+          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
+          #cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}            
@@ -62,6 +62,6 @@ jobs:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
+          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
+          #cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
