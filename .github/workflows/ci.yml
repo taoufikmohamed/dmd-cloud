@@ -25,28 +25,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # -------------------------------
-      # Delete old webhook-service image
-      # -------------------------------
-      - name: Delete old AI Service image from Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: |
-          curl -X DELETE \
-            -u ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} \
-            "https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/webhook-service"
-        continue-on-error: true
-           
-      # -------------------------------
-      # Delete old ai-service image
-      # -------------------------------
-      - name: Delete old AI Service image from Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: |
-          curl -X DELETE \
-            -u ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} \
-            "https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/ai-service/"
-        continue-on-error: true
-           
-      # -------------------------------
       # Build & Push AI Service
       # -------------------------------
       - name: Build and Push AI Service
@@ -57,17 +35,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
-
-      # -------------------------------
-      # Delete old Webhook Service image
-      # -------------------------------
-      - name: Delete old Webhook Service image from Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: |
-          curl -X DELETE \
-            -u ${{ secrets.DOCKERHUB_USERNAME }}:${{ secrets.DOCKERHUB_TOKEN }} \
-            "https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/webhook-service/"
-        continue-on-error: true
 
       # -------------------------------
       # Build & Push Webhook Service
