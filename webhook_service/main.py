@@ -3,6 +3,7 @@ import httpx
 import os
 import logging
 import time
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +15,23 @@ app = FastAPI()
 AI_SERVICE_URL = os.getenv("AI_SERVICE_URL", "http://ai-service:8000")
 AI_SERVICE_TIMEOUT_SECONDS = float(os.getenv("AI_SERVICE_TIMEOUT_SECONDS", "30"))
 WEBHOOK_RESPONSE_TIMEOUT = float(os.getenv("WEBHOOK_RESPONSE_TIMEOUT", "5"))  # Must be < 30s
+AUTO_SAVE_PIPELINE = os.getenv("AUTO_SAVE_PIPELINE", "true").lower() == "true"
+PIPELINE_OUTPUT_PATH = os.getenv("PIPELINE_OUTPUT_PATH", ".github/workflows/ci-cd.yml")
+
+
+def save_generated_pipeline(pipeline_content: str) -> None:
+    if not AUTO_SAVE_PIPELINE:
+        logger.info("AUTO_SAVE_PIPELINE is disabled; skipping file write")
+        return
+
+    if not pipeline_content or not pipeline_content.strip():
+        logger.warning("Generated pipeline content is empty; skipping file write")
+        return
+
+    output_file = Path(PIPELINE_OUTPUT_PATH)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(pipeline_content.strip() + "\n", encoding="utf-8")
+    logger.info(f"Pipeline saved to: {output_file.resolve()}")
 
 async def call_ai_async(payload: dict, retry_count: int = 0, max_retries: int = 3):
     """
@@ -63,6 +81,11 @@ async def call_ai_async(payload: dict, retry_count: int = 0, max_retries: int = 
                 logger.info("=" * 80)
                 logger.info(pipeline_content)
                 logger.info("=" * 80)
+
+                try:
+                    save_generated_pipeline(pipeline_content)
+                except Exception as save_error:
+                    logger.error(f"Failed to save generated pipeline: {save_error}")
             
     except httpx.TimeoutException as e:
         logger.error(f"Timeout calling AI service: {e}")
