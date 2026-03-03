@@ -24,6 +24,26 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Delete old Docker tags
+        run: |
+          # Delete AI Service tags
+          docker run --rm lumir/remove-dockerhub-tag \
+            --user "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password "${{ secrets.DOCKERHUB_TOKEN }}" \
+            ai-service:latesttest || true
+          
+          # Delete Webhook Service tags
+          docker run --rm lumir/remove-dockerhub-tag \
+            --user "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password "${{ secrets.DOCKERHUB_TOKEN }}" \
+            webhook-service:latesttest || true
+          
+          # Delete Orchestrator tags
+          docker run --rm lumir/remove-dockerhub-tag \
+            --user "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password "${{ secrets.DOCKERHUB_TOKEN }}" \
+            orchestrator:latesttest || true
+
       # -------------------------------
       # Build & Push AI Service
       # -------------------------------
