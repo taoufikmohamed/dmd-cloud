@@ -23,50 +23,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Ensure DockerHub repositories exist
-        run: |
-          echo "Checking and creating repositories if needed..."
           
-          # Get DockerHub token
-          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST \
-            -d "{\"username\": \"${{ secrets.DOCKERHUB_USERNAME }}\", \"password\": \"${{ secrets.DOCKERHUB_TOKEN }}\"}" \
-            https://hub.docker.com/v2/users/login/ | jq -r .token)
-          
-          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
-            echo "❌ Failed to authenticate with DockerHub"
-            exit 1
-          fi
-          
-          # Function to create repository if it doesn't exist
-          create_repo_if_needed() {
-            local repo=$1
-            echo "Checking ${repo}..."
-            
-            # Check if repository exists
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${repo}/)
-            
-            if [ "$STATUS" = "404" ]; then
-              echo "Creating ${repo}..."
-              curl -s -X POST \
-                -H "Authorization: JWT ${TOKEN}" \
-                -H "Content-Type: application/json" \
-                -d "{\"namespace\":\"${{ secrets.DOCKERHUB_USERNAME }}\",\"name\":\"${repo}\",\"is_private\":false}" \
-                https://hub.docker.com/v2/repositories/
-              echo "✓ ${repo} created"
-            else
-              echo "✓ ${repo} already exists"
-            fi
-          }
-          
-          # Ensure all repositories exist
-          create_repo_if_needed "ai-service"
-          create_repo_if_needed "webhook-service"
-          create_repo_if_needed "orchestrator"
-          
-          echo "All repositories ready"
-
       # -------------------------------
       # Build & Push AI Service
       # -------------------------------
