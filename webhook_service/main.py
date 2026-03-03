@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 import httpx
 import os
@@ -55,12 +54,15 @@ async def call_ai_async(payload: dict, retry_count: int = 0, max_retries: int = 
             
             ai_response = response.json()
             logger.info(f"Successfully generated pipeline from AI service")
-            logger.info(f"AI Response: {str(ai_response)[:500]}...")  # Log first 500 chars
             
             # Extract the generated pipeline from AI response
             if "choices" in ai_response and len(ai_response["choices"]) > 0:
                 pipeline_content = ai_response["choices"][0].get("message", {}).get("content", "")
-                logger.info(f"Generated CI/CD Pipeline:\n{pipeline_content}")
+                logger.info("=" * 80)
+                logger.info("Generated CI/CD Pipeline:")
+                logger.info("=" * 80)
+                logger.info(pipeline_content)
+                logger.info("=" * 80)
             
     except httpx.TimeoutException as e:
         logger.error(f"Timeout calling AI service: {e}")
