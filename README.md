@@ -1,4 +1,7 @@
 # DMD Cloud Project - Complete User Guide
+  Diff-Managed Deployment
+  DeepSeek-Managed Deployment
+  Dynamic Managed Deployment
 
 ## Executive Summary
 

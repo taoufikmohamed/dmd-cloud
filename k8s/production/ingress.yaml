@@ -1,0 +1,73 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dmd-ingress
+  namespace: dmd-production
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+spec:
+  tls:
+  - hosts:
+    - webhook.yourdomain.com  # Update with your domain
+    secretName: dmd-tls-secret
+  rules:
+  - host: webhook.yourdomain.com  # Update with your domain
+    http:
+      paths:
+      - path: /webhook
+        pathType: Prefix
+        backend:
+          service:
+            name: webhook-service
+            port:
+              number: 8001
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: webhook-service
+            port:
+              number: 8001
+---
+# Network Policy - restrict traffic to ai-service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-service-network-policy
+  namespace: dmd-production
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: webhook-service
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443  # Allow HTTPS to DeepSeek API
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53  # Allow DNS

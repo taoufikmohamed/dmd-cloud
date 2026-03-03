@@ -1,0 +1,31 @@
+# Example terraform.tfvars for Production
+# Copy this file to terraform.tfvars and modify values
+
+# Environment Configuration
+environment = "prod"
+location    = "East US"
+
+# AKS Configuration
+node_count        = 3
+node_vm_size      = "Standard_D2s_v3"
+min_node_count    = 2
+max_node_count    = 5
+kubernetes_version = "1.28"
+
+# Container Registry
+acr_sku = "Standard"  # Use "Premium" for geo-replication
+
+# Monitoring
+log_retention_days = 30
+
+# Security
+enable_azure_policy = true
+
+# Tags
+tags = {
+  Environment = "Production"
+  Project     = "DMD-Cloud"
+  ManagedBy   = "Terraform"
+  Team        = "DevOps"
+  CostCenter  = "Engineering"
+}

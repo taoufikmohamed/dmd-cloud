@@ -1,0 +1,136 @@
+name: Deploy to Azure AKS Production
+
+on:
+  push:
+    branches:
+      - main  # Deploy on push to main branch
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  AZURE_RESOURCE_GROUP: dmd-prod-rg
+  AKS_CLUSTER_NAME: dmd-aks-prod
+  ACR_NAME: dmdacrprod
+  NAMESPACE: dmd-production
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.ACR_NAME }}.azurecr.io
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+
+    - name: Get ACR login server
+      id: acr-info
+      run: |
+        ACR_SERVER=$(az acr show --name ${{ env.ACR_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query loginServer -o tsv)
+        echo "ACR_SERVER=$ACR_SERVER" >> $GITHUB_OUTPUT
+
+    - name: Build and push webhook-service
+      run: |
+        IMAGE_TAG=${{ steps.acr-info.outputs.ACR_SERVER }}/webhook-service:${{ github.sha }}
+        IMAGE_LATEST=${{ steps.acr-info.outputs.ACR_SERVER }}/webhook-service:latest
+        
+        docker build -t $IMAGE_TAG -t $IMAGE_LATEST ./webhook_service
+        docker push $IMAGE_TAG
+        docker push $IMAGE_LATEST
+        
+        echo "WEBHOOK_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+    - name: Build and push ai-service
+      run: |
+        IMAGE_TAG=${{ steps.acr-info.outputs.ACR_SERVER }}/ai-service:${{ github.sha }}
+        IMAGE_LATEST=${{ steps.acr-info.outputs.ACR_SERVER }}/ai-service:latest
+        
+        docker build -t $IMAGE_TAG -t $IMAGE_LATEST ./ai_service
+        docker push $IMAGE_TAG
+        docker push $IMAGE_LATEST
+        
+        echo "AI_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.AKS_CLUSTER_NAME }} \
+          --overwrite-existing
+
+    - name: Update Kubernetes manifests
+      run: |
+        # Update image references in manifests
+        sed -i "s|image:.*webhook-service:.*|image: ${{ env.WEBHOOK_IMAGE }}|g" k8s/production/webhook-deployment.yaml
+        sed -i "s|image:.*ai-service:.*|image: ${{ env.AI_IMAGE }}|g" k8s/production/ai-deployment.yaml
+
+    - name: Deploy to AKS
+      run: |
+        # Apply namespace (idempotent)
+        kubectl apply -f k8s/production/namespace.yaml
+        
+        # Deploy AI service first
+        kubectl apply -f k8s/production/ai-deployment.yaml
+        kubectl rollout status deployment/ai-service -n ${{ env.NAMESPACE }} --timeout=5m
+        
+        # Deploy webhook service
+        kubectl apply -f k8s/production/webhook-deployment.yaml
+        kubectl rollout status deployment/webhook-service -n ${{ env.NAMESPACE }} --timeout=5m
+        
+        # Apply ingress and network policies
+        kubectl apply -f k8s/production/ingress.yaml
+
+    - name: Verify deployment
+      run: |
+        echo "=== Pods Status ==="
+        kubectl get pods -n ${{ env.NAMESPACE }}
+        
+        echo "=== Services Status ==="
+        kubectl get svc -n ${{ env.NAMESPACE }}
+        
+        echo "=== HPA Status ==="
+        kubectl get hpa -n ${{ env.NAMESPACE }}
+        
+        echo "=== Ingress Status ==="
+        kubectl get ingress -n ${{ env.NAMESPACE }}
+
+    - name: Health Check
+      run: |
+        # Wait for services to be ready
+        sleep 30
+        
+        # Check webhook service health
+        WEBHOOK_POD=$(kubectl get pod -n ${{ env.NAMESPACE }} -l app=webhook-service -o jsonpath='{.items[0].metadata.name}')
+        kubectl exec -n ${{ env.NAMESPACE }} $WEBHOOK_POD -- curl -f http://localhost:8001/health
+        
+        # Check AI service health
+        AI_POD=$(kubectl get pod -n ${{ env.NAMESPACE }} -l app=ai-service -o jsonpath='{.items[0].metadata.name}')
+        kubectl exec -n ${{ env.NAMESPACE }} $AI_POD -- curl -f http://localhost:8000/health
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "Deployment failed! Rolling back..."
+        kubectl rollout undo deployment/webhook-service -n ${{ env.NAMESPACE }}
+        kubectl rollout undo deployment/ai-service -n ${{ env.NAMESPACE }}
+
+    - name: Post-deployment summary
+      if: success()
+      run: |
+        echo "✓ Deployment successful!"
+        echo "Webhook Service Image: ${{ env.WEBHOOK_IMAGE }}"
+        echo "AI Service Image: ${{ env.AI_IMAGE }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Branch: ${{ github.ref }}"
