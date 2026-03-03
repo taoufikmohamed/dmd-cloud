@@ -24,50 +24,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Delete DockerHub repositories
-        run: |
-          echo "Attempting to delete DockerHub repositories..."
-          
-          # Get DockerHub token
-          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d "{\"username\": \"${{ secrets.DOCKERHUB_USERNAME }}\", \"password\": \"${{ secrets.DOCKERHUB_TOKEN }}\"}" https://hub.docker.com/v2/users/login/ | jq -r .token)
-          
-          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
-            echo "❌ Failed to get DockerHub token"
-            exit 1
-          fi
-          
-          echo "✓ Token obtained successfully"
-          
-          # Function to delete repository
-          delete_repo() {
-            local repo=$1
-            echo "Deleting ${repo}..."
-            
-            RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
-              -H "Authorization: JWT ${TOKEN}" \
-              https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${repo}/)
-            
-            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-            
-            if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "202" ]; then
-              echo "✓ ${repo} deleted (HTTP ${HTTP_CODE})"
-            elif [ "$HTTP_CODE" = "404" ]; then
-              echo "ℹ ${repo} already doesn't exist (HTTP ${HTTP_CODE})"
-            else
-              echo "⚠ ${repo} deletion returned HTTP ${HTTP_CODE}"
-              echo "$RESPONSE" | head -n-1
-            fi
-          }
-          
-          # Delete all repositories
-          delete_repo "ai-service"
-          delete_repo "webhook-service"
-          delete_repo "orchestrator"
-          
-          echo "Waiting 20 seconds for DockerHub to process deletions..."
-          sleep 20
-          echo "Ready to build new images"
-
       # -------------------------------
       # Build & Push AI Service
       # -------------------------------
@@ -81,7 +37,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latesttest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:run-${{ github.run_number }}
 
@@ -98,7 +54,7 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latesttest
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}
 
@@ -117,6 +73,6 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latesttest
+            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:run-${{ github.run_number }}
