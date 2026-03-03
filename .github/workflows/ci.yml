@@ -26,38 +26,47 @@ jobs:
 
       - name: Delete DockerHub repositories
         run: |
+          echo "Attempting to delete DockerHub repositories..."
+          
           # Get DockerHub token
-          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "${{ secrets.DOCKERHUB_USERNAME }}", "password": "${{ secrets.DOCKERHUB_TOKEN }}"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d "{\"username\": \"${{ secrets.DOCKERHUB_USERNAME }}\", \"password\": \"${{ secrets.DOCKERHUB_TOKEN }}\"}" https://hub.docker.com/v2/users/login/ | jq -r .token)
           
-          # Delete AI Service repository
-          curl -X DELETE -H "Authorization: JWT ${TOKEN}" \
-            https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/ai-service/ || true
+          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+            echo "❌ Failed to get DockerHub token"
+            exit 1
+          fi
           
-          # Delete Webhook Service repository
-          curl -X DELETE -H "Authorization: JWT ${TOKEN}" \
-            https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/webhook-service/ || true
+          echo "✓ Token obtained successfully"
           
-          # Delete Orchestrator repository
-          curl -X DELETE -H "Authorization: JWT ${TOKEN}" \
-            https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator/ || true
-          
-          echo "Repositories deleted successfully"
-          echo "Waiting 15 seconds for DockerHub to process deletions..."
-          sleep 15
-          
-          # Verify repositories are deleted
-          echo "Verifying repositories are deleted..."
-          for repo in ai-service webhook-service orchestrator; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          # Function to delete repository
+          delete_repo() {
+            local repo=$1
+            echo "Deleting ${repo}..."
+            
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+              -H "Authorization: JWT ${TOKEN}" \
               https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/${repo}/)
-            if [ "$STATUS" = "404" ]; then
-              echo "✓ ${repo} deleted successfully"
+            
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            
+            if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "202" ]; then
+              echo "✓ ${repo} deleted (HTTP ${HTTP_CODE})"
+            elif [ "$HTTP_CODE" = "404" ]; then
+              echo "ℹ ${repo} already doesn't exist (HTTP ${HTTP_CODE})"
             else
-              echo "⚠ ${repo} still exists (HTTP ${STATUS}), waiting 10 more seconds..."
-              sleep 10
+              echo "⚠ ${repo} deletion returned HTTP ${HTTP_CODE}"
+              echo "$RESPONSE" | head -n-1
             fi
-          done
-          echo "All repositories verified deleted, ready to build"
+          }
+          
+          # Delete all repositories
+          delete_repo "ai-service"
+          delete_repo "webhook-service"
+          delete_repo "orchestrator"
+          
+          echo "Waiting 20 seconds for DockerHub to process deletions..."
+          sleep 20
+          echo "Ready to build new images"
 
       # -------------------------------
       # Build & Push AI Service
