@@ -47,23 +47,26 @@ jobs:
         with:
           context: ./webhook_service
           push: true
-          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
-          #cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
-
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache,mode=max
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}            
-                # -------------------------------
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}
+
+      # -------------------------------
       # Build & Push orchestrator image
       # -------------------------------
       
       - name: Build and push orchestrator image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
-          #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
-          #cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
-          tags: ${{ secrets.REGISTRY_DOMAIN }}/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache,mode=max
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:run-${{ github.run_number }}
