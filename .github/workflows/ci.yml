@@ -32,10 +32,12 @@ jobs:
         with:
           context: ./ai_service
           push: true
+          provenance: false
+          sbom: false
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latesttest
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:run-${{ github.run_number }}
 
@@ -47,10 +49,12 @@ jobs:
         with:
           context: ./webhook_service
           push: true
+          provenance: false
+          sbom: false
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latesttest
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}
 
@@ -64,9 +68,11 @@ jobs:
           context: ./orchestrator
           file: ./orchestrator/Dockerfile
           push: true
+          provenance: false
+          sbom: false
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:buildcache,mode=max
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:latesttest
             ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/orchestrator:run-${{ github.run_number }}
