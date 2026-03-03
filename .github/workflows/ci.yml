@@ -35,9 +35,9 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
           tags: |
-          
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:run-${{ github.run_number }}
 
       # -------------------------------
       # Build & Push Webhook Service
@@ -49,10 +49,12 @@ jobs:
           push: true
           #cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache
           #cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/ai-service:buildcache,mode=max
+
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}            
-      # -------------------------------
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}            
+                # -------------------------------
       # Build & Push orchestrator image
       # -------------------------------
       
