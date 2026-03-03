@@ -42,6 +42,8 @@ jobs:
             https://hub.docker.com/v2/repositories/${{ secrets.DOCKERHUB_USERNAME }}/orchestrator/ || true
           
           echo "Repositories deleted successfully"
+          echo "Waiting 15 seconds for DockerHub to process deletions..."
+          sleep 15
 
       # -------------------------------
       # Build & Push AI Service
