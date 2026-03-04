@@ -2,10 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [ master]
+    branches: [ master ]
   pull_request:
-    branches: [ master]
-  workflow_dispatch: 
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   docker-build:
@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -23,10 +23,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
-      # -------------------------------
-      # Build & Push AI Service
-      # -------------------------------
+
       - name: Build and Push AI Service
         uses: docker/build-push-action@v5
         with:
@@ -41,9 +38,6 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ai-service:run-${{ github.run_number }}
 
-      # -------------------------------
-      # Build & Push Webhook Service
-      # -------------------------------
       - name: Build and Push Webhook Service
         uses: docker/build-push-action@v5
         with:
@@ -58,11 +52,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/webhook-service:run-${{ github.run_number }}
 
-      # -------------------------------
-      # Build & Push orchestrator image
-      # -------------------------------
-      
-      - name: Build and push orchestrator image
+      - name: Build and Push Orchestrator
         uses: docker/build-push-action@v5
         with:
           context: ./orchestrator
