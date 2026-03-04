@@ -34,7 +34,6 @@ secrets/
 *.key
 *.crt
 *.p12
-*.png
 
 # Docker
 .docker/
@@ -85,5 +84,16 @@ node_modules/
 coverage/
 htmlcov/
 
-#Images
+# Images
 *.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+*.svg
+*.ico
+*.tif
+*.tiff
+*.avif
+*.heic
