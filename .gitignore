@@ -84,3 +84,6 @@ pip-wheel-metadata/
 node_modules/
 coverage/
 htmlcov/
+
+#Images
+*.png
