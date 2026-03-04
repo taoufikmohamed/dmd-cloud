@@ -77,10 +77,15 @@ if ($PushImages -and [string]::IsNullOrWhiteSpace($DockerUsername)) {
 
 if ($PushImages) {
     Write-Step "Docker login check"
-    $dockerInfo = docker info 2>$null | Out-String
-    if ($dockerInfo -notmatch "Username") {
+    $configPath = "$env:USERPROFILE\.docker\config.json"
+    if (!(Test-Path $configPath)) {
+        throw "Docker config not found. Run: docker login"
+    }
+    $config = Get-Content $configPath -Raw | ConvertFrom-Json
+    if (!$config.auths -or $config.auths.PSObject.Properties.Count -eq 0) {
         throw "Docker is not logged in. Run: docker login"
     }
+    Write-Host "Docker authenticated" -ForegroundColor Gray
 }
 
 Write-Step "Building all service images"

@@ -34,7 +34,6 @@ secrets/
 *.key
 *.crt
 *.p12
-
 # Docker
 .docker/
 .dockerignore

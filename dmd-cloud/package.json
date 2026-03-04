@@ -1,0 +1,24 @@
+{
+  "name": "dmd-cloud",
+  "version": "1.0.0",
+  "description": "A project for automating workflows in the cloud.",
+  "main": "src/workflow/index.ts",
+  "scripts": {
+    "run-workflow": "bash scripts/run-workflow.sh",
+    "cleanup": "bash scripts/cleanup.sh",
+    "validate": "bash scripts/validate.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/taoufikmohamed/dmd-cloud.git"
+  },
+  "keywords": [
+    "automation",
+    "workflow",
+    "cloud"
+  ],
+  "author": "taoufikmohamed",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

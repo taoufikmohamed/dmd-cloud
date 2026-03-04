@@ -1,0 +1,171 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  python-checks:
+    name: Python checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lint tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint ai_service
+        run: flake8 ai_service
+
+      - name: Lint webhook_service
+        run: flake8 webhook_service
+
+  build-images:
+    name: Build service images
+    runs-on: ubuntu-latest
+    needs: python-checks
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ai-service image
+        run: docker build -t ai-service:ci ./ai_service
+
+      - name: Build webhook-service image
+        run: docker build -t webhook-service:ci ./webhook_service
+
+      - name: Build orchestrator image
+        run: docker build -t orchestrator:ci ./orchestrator
+
+  validate-k8s:
+    name: Validate Kubernetes manifests
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Validate base manifests
+        run: |
+          kubectl apply --dry-run=client -f k8s/ai-deployment.yaml
+          kubectl apply --dry-run=client -f k8s/webhook-deployment.yaml
+
+      - name: Validate production manifests
+        run: |
+          kubectl apply --dry-run=client -f k8s/production/namespace.yaml
+          kubectl apply --dry-run=client -f k8s/production/ai-deployment.yaml
+          kubectl apply --dry-run=client -f k8s/production/webhook-deployment.yaml
+          kubectl apply --dry-run=client -f k8s/production/ingress.yaml
+
+  integration-minikube:
+    name: Integration test on Minikube
+    runs-on: ubuntu-latest
+    needs: [build-images, validate-k8s]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          kubernetes-version: v1.29.0
+
+      - name: Build images in Minikube Docker daemon
+        run: |
+          eval "$(minikube docker-env)"
+          docker build -t ai-service:latest ./ai_service
+          docker build -t webhook-service:latest ./webhook_service
+
+      - name: Create secret for ai-service
+        run: |
+          kubectl create secret generic ai-service-secrets \
+            --from-literal=DEEPSEEK_API_KEY="dummy-key-for-ci" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to Minikube
+        run: |
+          kubectl apply -f k8s/ai-deployment.yaml
+          kubectl apply -f k8s/webhook-deployment.yaml
+          kubectl rollout status deployment/ai-service --timeout=180s
+          kubectl rollout status deployment/webhook-service --timeout=180s
+
+      - name: Port-forward services
+        run: |
+          kubectl port-forward service/ai-service 8000:8000 >/tmp/pf-ai.log 2>&1 &
+          kubectl port-forward service/webhook-service 8001:8001 >/tmp/pf-webhook.log 2>&1 &
+          sleep 8
+
+      - name: Verify health endpoints
+        run: |
+          curl -fsS http://localhost:8000/health
+          curl -fsS http://localhost:8001/health
+
+      - name: Send webhook payload
+        run: |
+          cat > /tmp/webhook.json << 'EOF'
+          {
+            "repository": {"full_name": "taoufikmohamed/dmd-cloud"},
+            "head_commit": {"id": "ci-test", "message": "ci minikube integration test"},
+            "diff": "diff --git a/app.py b/app.py\\n+print('hello from ci')"
+          }
+          EOF
+
+          HTTP_CODE=$(curl -sS -o /tmp/webhook-response.json -w "%{http_code}" -X POST http://localhost:8001/webhook/github \
+            -H "Content-Type: application/json" \
+            --data @/tmp/webhook.json)
+
+          echo "Webhook HTTP status: ${HTTP_CODE}"
+          cat /tmp/webhook-response.json
+
+          if [ "${HTTP_CODE}" -ne 200 ]; then
+            echo "Webhook request failed"
+            exit 1
+          fi
+
+      - name: Verify webhook processing logs
+        run: |
+          sleep 20
+          kubectl logs -l app=webhook-service --since=2m --all-containers=true > /tmp/webhook-logs.txt
+          grep -E "Received webhook|Processing webhook payload|Generated CI/CD Pipeline|Pipeline saved to" /tmp/webhook-logs.txt
+
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -o wide || true
+          echo "=== Services ==="
+          kubectl get svc || true
+          echo "=== Webhook logs (last 200 lines) ==="
+          kubectl logs -l app=webhook-service --all-containers=true --tail=200 || true
+          echo "=== AI logs (last 200 lines) ==="
+          kubectl logs -l app=ai-service --all-containers=true --tail=200 || true
+
+  summary:
+    name: CI summary
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [python-checks, build-images, validate-k8s, integration-minikube]
+    steps:
+      - name: Print results
+        run: |
+          echo "python-checks: ${{ needs.python-checks.result }}"
+          echo "build-images: ${{ needs.build-images.result }}"
+          echo "validate-k8s: ${{ needs.validate-k8s.result }}"
+          echo "integration-minikube: ${{ needs.integration-minikube.result }}"
