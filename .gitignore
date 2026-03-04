@@ -34,6 +34,7 @@ secrets/
 *.key
 *.crt
 *.p12
+*.png
 
 # Docker
 .docker/
