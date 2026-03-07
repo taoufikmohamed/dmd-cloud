@@ -16,40 +16,33 @@ Whenever you push code to GitHub, a webhook automatically triggers the system to
 
 ---
 
-## Quick Start (5 Minutes)
+## Quick Start (Automated Bootstrap)
 
-### Prerequisites
-- Minikube running with kubectl installed
-- Docker configured
-- DeepSeek API key (get from https://platform.deepseek.com/)
+**For complete setup instructions, see the [End User Runbook (Canonical)](#end-user-runbook-canonical) below.**
 
-### Step 1: Create Kubernetes Secret
+### Fastest Path (Minikube)
+
+Prerequisites: `minikube`, `kubectl`, `git`, DeepSeek API key from https://platform.deepseek.com/
+
 ```powershell
-kubectl create secret generic ai-service-secrets `
-  --from-literal=DEEPSEEK_API_KEY="sk-your-actual-key-here" `
-  --dry-run=client -o yaml | kubectl apply -f -
+minikube start
+kubectl config use-context minikube
+.\bootstrap-enduser.ps1 -DeepSeekApiKey "sk-your-actual-key" -Platform minikube -SkipWebhook
 ```
 
-### Step 2: Deploy System
+Verify deployment:
 ```powershell
-# Build images in minikube
-minikube image build -t webhook-service:latest ./webhook_service
-minikube image build -t ai-service:latest ./ai_service
-
-# Apply Kubernetes manifests
-kubectl apply -f k8s/webhook-deployment.yaml
-kubectl apply -f k8s/ai-deployment.yaml
-
-# Verify all pods are running
 kubectl get pods
+kubectl logs -l app=webhook-service --tail=20
 ```
 
-### Step 3: Test Workflow
-```powershell
-# Start port-forward
-Start-Job -ScriptBlock { kubectl port-forward service/webhook-service 8001:8001 } | Out-Null
+### Manual Testing (Without GitHub)
 
-# Send test webhook
+```powershell
+# Port-forward to local machine
+kubectl port-forward service/webhook-service 8001:8001
+
+# Send test payload
 $payload = @{
     repository = @{ full_name = "test-org/test-repo" }
     head_commit = @{ id = "abc123"; message = "Test change" }
@@ -59,18 +52,120 @@ $payload = @{
 Invoke-WebRequest -Uri "http://localhost:8001/webhook/github" `
     -Method POST -Body $payload -ContentType "application/json"
 
-# Check logs (wait 30-40 seconds for AI processing)
-Start-Sleep -Seconds 40
+# Check logs
 kubectl logs -l app=webhook-service --since=2m
 ```
 
-**Success:** Look for log lines:
+**For production deployment, webhook registration, AKS setup, and detailed troubleshooting, see the [End User Runbook (Canonical)](#end-user-runbook-canonical) section.**
+
+## End User Runbook (Canonical)
+
+Use this runbook as the single source of truth for one-time operator setup so end users can trigger automation by pushing code only.
+
+### Scope
+- Script: `bootstrap-enduser.ps1`
+- Goal: one-time infrastructure and webhook setup
+- Result: end users only need to `git push`
+
+### Prerequisites
+- Tools (all modes): `git`, `kubectl`, PowerShell
+- Required secret: valid DeepSeek API key (`sk-...`)
+- Run commands from repo root: `path to project`
+
+Minikube mode prerequisites:
+- `minikube` installed and running
+- local image building works (`minikube image build ...`)
+
+AKS mode prerequisites:
+- `az`, `terraform`, `kubectl`, `git`
+- Azure login completed (`az login`)
+- access to subscription/resource group/AKS cluster/ACR
+- domain available if using `-Domain`
+
+Webhook registration prerequisites (if not using `-SkipWebhook`):
+- GitHub token with webhook management permission (`-GitHubToken`)
+- reachable webhook endpoint (`-WebhookUrl` or `-Domain`)
+- repository remote points to GitHub or pass `-RepoOwner` and `-RepoName`
+
+### Recommended Execution Order (No-Issue Path)
+
+1. Validate tools and cluster context.
+```powershell
+kubectl version
+git --version
 ```
-INFO:main:Received webhook for repository: test-org/test-repo
-INFO:main:Generated CI/CD Pipeline:
-INFO:main:name: CI/CD Pipeline
-INFO:main:Pipeline saved to: /app/.github/workflows/ci-cd.yml
+
+2. First run bootstrap without webhook registration.
+```powershell
+# Minikube default flow
+minikube start
+kubectl config use-context minikube
+.\bootstrap-enduser.ps1 -DeepSeekApiKey "sk-your-actual-key" -Platform minikube -SkipWebhook
 ```
+
+3. Verify workloads are healthy before exposing webhook.
+```powershell
+kubectl get pods
+kubectl logs -l app=ai-service --tail=50
+kubectl logs -l app=webhook-service --tail=50
+```
+
+4. Register webhook only after health is confirmed.
+
+Minikube with public tunnel:
+```powershell
+.\bootstrap-enduser.ps1 `
+  -DeepSeekApiKey "sk-your-actual-key" `
+  -Platform minikube `
+  -WebhookUrl "https://<your-public-tunnel>/webhook/github" `
+  -GitHubToken "ghp_or_github_pat"
+```
+
+AKS with domain:
+```powershell
+.\bootstrap-enduser.ps1 `
+  -DeepSeekApiKey "sk-your-actual-key" `
+  -Platform aks `
+  -Domain "webhook.example.com" `
+  -GitHubToken "ghp_or_github_pat"
+```
+
+5. Trigger end-user flow with a normal git push.
+```powershell
+git add .
+git commit -m "test: trigger dmd workflow"
+git push
+```
+
+### AKS Important Note
+`bootstrap-enduser.ps1` handles AKS auth/context, secrets, manifest patching, and webhook setup. For full production rollout, also deploy production workloads when needed:
+```powershell
+.\deploy-production.ps1 -DeepSeekApiKey "sk-your-actual-key"
+```
+Use this if pods/services are not already deployed in `dmd-production`.
+
+### Success Checks
+- Pods are `Running` and `Ready`
+- Webhook endpoint is reachable
+- GitHub webhook delivery shows `2xx`
+- Webhook logs show receipt and pipeline generation
+
+Minikube logs:
+```powershell
+kubectl logs -f -l app=webhook-service
+```
+
+AKS logs:
+```powershell
+kubectl logs -f -l app=webhook-service -n dmd-production
+```
+
+### Recommended Guardrails
+1. Use `-SkipWebhook` for first bootstrap run to isolate infra issues from GitHub webhook issues.
+2. Do not point GitHub directly to local Minikube URL; use a secure tunnel and `-WebhookUrl`.
+3. Keep API keys in Kubernetes secrets only; never commit keys.
+4. In AKS, wait for external IP and DNS propagation before expecting successful GitHub deliveries.
+5. If repo detection fails, pass `-RepoOwner` and `-RepoName` explicitly.
 
 ---
 
@@ -773,4 +868,4 @@ kubectl rollout restart deployment/<name>  # Restart
            ↓
         Calls AI async
            ↓
-        AI generates pipeline
+        AI generates pipeline# Test commit for DMD
