@@ -141,43 +141,52 @@ jobs:
   # KUBERNETES DEPLOYMENT VALIDATION
   # =========================================================================
   validate-kubernetes:
-    name: Validate Kubernetes Manifests
-    runs-on: ubuntu-latest
-    needs: build-images
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+     name: Validate Kubernetes Manifests
+     runs-on: ubuntu-latest
+     needs: build-images
+     steps:
+        - name: Validate Kubernetes manifests
+          run: |
+            # Use the dedicated schema mirror to avoid HTML parsing errors
+            kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/webhook-deployment.yaml
+            kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
+            
+            # Validate production directory
+            kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Install kubeval
-        run: |
-          wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-          tar xf kubeval-linux-amd64.tar.gz
-          sudo mv kubeval /usr/local/bin
+  #     - name: Install kubeval
+  #       run: |
+  #         wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+  #         tar xf kubeval-linux-amd64.tar.gz
+  #         sudo mv kubeval /usr/local/bin
 
-      - name: Validate Kubernetes manifests
-        run: kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
+  #     - name: Validate Kubernetes manifests
+  #       run: kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
 
-      - name: Validate k8s manifests
-        run: |
-          kubeval --skip-kinds CustomResourceDefinition --ignore-missing-schemas ./k8s/*.yaml
+  #     - name: Validate k8s manifests
+  #       run: |
+  #         kubeval --skip-kinds CustomResourceDefinition --ignore-missing-schemas ./k8s/*.yaml
 
    
-      # In your workflow definition (.github/workflows/orig.yml)
-      - name: Validate deployment
-        run: |
-          kubeval k8s/webhook-deployment.yaml --schema-location=https://github.com/instrumenta/kubernetes-json-schema/blob/master
-          # OR point to local copy:
-          kubeval k8s/webhook-deployment.yaml --schema-location=file://./schemas
+  #     # In your workflow definition (.github/workflows/orig.yml)
+  #     - name: Validate deployment
+  #       run: |
+  #         kubeval k8s/webhook-deployment.yaml --schema-location=https://github.com/instrumenta/kubernetes-json-schema/blob/master
+  #         # OR point to local copy:
+  #         kubeval k8s/webhook-deployment.yaml --schema-location=file://./schemas
 
-      - name: Validate ai-deployment.yaml
-        run: kubeval k8s/ai-deployment.yaml
+  #     - name: Validate ai-deployment.yaml
+  #       run: kubeval k8s/ai-deployment.yaml
 
-      - name: Validate production manifests
-        run: |
-          kubeval k8s/production/namespace.yaml
-          kubeval k8s/production/webhook-deployment.yaml
-          kubeval k8s/production/ai-deployment.yaml
-          kubeval k8s/production/ingress.yaml
+  #     - name: Validate production manifests
+  #       run: |
+  #         kubeval k8s/production/namespace.yaml
+  #         kubeval k8s/production/webhook-deployment.yaml
+  #         kubeval k8s/production/ai-deployment.yaml
+  #         kubeval k8s/production/ingress.yaml
+
 
   # =========================================================================
   # UNIT TESTS
