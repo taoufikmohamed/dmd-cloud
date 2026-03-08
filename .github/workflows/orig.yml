@@ -73,8 +73,8 @@ jobs:
     strategy:
       matrix:
         service:
-          - ai-service
-          - webhook-service
+          - ai_service
+          - webhook_service
           - orchestrator
     outputs:
       ai-service-image: ${{ steps.build-ai.outputs.image }}
@@ -108,7 +108,7 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push AI Service image
-        if: matrix.service == 'ai-service'
+        if: matrix.service == 'ai_service'
         id: build-ai
         uses: docker/build-push-action@v5
         with:
@@ -118,7 +118,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Build and push Webhook Service image
-        if: matrix.service == 'webhook-service'
+        if: matrix.service == 'webhook_service'
         id: build-webhook
         uses: docker/build-push-action@v5
         with:
