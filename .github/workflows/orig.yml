@@ -140,10 +140,11 @@ jobs:
   # =========================================================================
   # KUBERNETES DEPLOYMENT VALIDATION
   # =========================================================================
-validate-kubernetes:
-      name: Validate Kubernetes Manifests
-      runs-on: ubuntu-latest
-      steps:
+  validate-kubernetes:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
         - name: Checkout code
           uses: actions/checkout@v4
     
@@ -156,8 +157,8 @@ validate-kubernetes:
         - name: Validate Kubernetes manifests
           run: |
             kubeval --ignore-missing-satest
-          needs: build-images
-          steps:
+          
+          
         - name: Checkout code
           uses: actions/checkout@v4
     
@@ -167,8 +168,9 @@ validate-kubernetes:
             tar -xzf kubeval-linux-amd64.tar.gz
             sudo mv kubeval /usr/local/bin/
     
-        - name: Validate Kubernetes manifests
-            run:chemas --schema-location https://kubernetesjsonschema.dev/ k8s/webhook-deployment.yaml
+        - name: Validate Kubernetes
+          run: |
+              chemas --schema-location https://kubernetesjsonschema.dev/ k8s/webhook-deployment.yaml
               kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
               kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
         #       uses: actions/checkout@v4
