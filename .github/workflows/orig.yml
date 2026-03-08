@@ -141,31 +141,31 @@ jobs:
   # KUBERNETES DEPLOYMENT VALIDATION
   # =========================================================================
 validate-kubernetes:
-  name: Validate Kubernetes Manifests
-  runs-on: ubuntu-latest
-  needs: build-images
-  steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install kubeval
-      run: |
-        curl -LO https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-        tar -xzf kubeval-linux-amd64.tar.gz
-        sudo mv kubeval /usr/local/bin/
-
-    - name: Show schema validation tool path
-      run: which kubeval
-
-    - name: Run kubeval locally
-      run: kubeval --schema-location file://$(pwd)/schemas k8s/webhook-deployment.yaml
-
-    - name: Validate Kubernetes manifests
-      run: |
-        kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
-        kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
-        kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
-        #       uses: actions/checkout@v4
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    needs: build-image
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
+      - name: Install kubeval
+        run: |
+          curl -LO https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+          tar -xzf kubeval-linux-amd64.tar.gz
+          sudo mv kubeval /usr/local/bin/
+  
+      - name: Show schema validation tool path
+        run: which kubeval
+  
+      - name: Run kubeval locally
+        run: kubeval --schema-location file://$(pwd)/schemas k8s/webhook-deployment.yaml
+  
+      - name: Validate Kubernetes manifests
+        run: |
+          kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
+          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
+          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
+       #       uses: actions/checkout@v4
 
   #     - name: Install kubeval
   #       run: |
