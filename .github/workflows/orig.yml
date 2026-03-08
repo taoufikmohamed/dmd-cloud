@@ -153,6 +153,12 @@ jobs:
             curl -LO https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
             tar -xzf kubeval-linux-amd64.tar.gz
             sudo mv kubeval /usr/local/bin/
+
+        - name: Show schema validation tool path
+          run: which kubeval
+
+        - name: Run kubeval locally
+          run: kubeval --schema-location file://$(pwd)/schemas k8s/webhook-deployment.yaml
     
         - name: Validate Kubernetes manifests
           run: |
