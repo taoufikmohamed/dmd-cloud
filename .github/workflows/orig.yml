@@ -155,7 +155,7 @@ jobs:
           sudo mv kubeval /usr/local/bin
 
       - name: Validate Kubernetes manifests
-        run: kubeval --skip-missing-schemas k8s/webhook-deployment.yaml
+        run: kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
 
       - name: Validate k8s manifests
         run: |
