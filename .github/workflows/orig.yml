@@ -177,8 +177,8 @@ jobs:
     strategy:
       matrix:
         service:
-          - ai-service
-          - webhook-service
+          - ai_service
+          - webhook_service
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -189,8 +189,8 @@ jobs:
           python-version: '3.11'
       - name: Ensure webhook-service exists
         run: |
-          if [ ! -d "./webhook-service" ]; then
-            echo "webhook-service directory missing!"
+          if [ ! -d "./webhook_service" ]; then
+            echo "webhook_service directory missing!"
             exit 1
           fi
 
