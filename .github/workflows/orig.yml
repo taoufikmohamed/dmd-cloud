@@ -156,7 +156,7 @@ jobs:
     
         - name: Validate Kubernetes manifests
           run: |
-            kubeval --ignore-missing-satest
+            kubeval --ignore-missing-schemas
           
           
         - name: Checkout code
