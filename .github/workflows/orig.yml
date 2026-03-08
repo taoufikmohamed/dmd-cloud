@@ -140,10 +140,10 @@ jobs:
   # =========================================================================
   # KUBERNETES DEPLOYMENT VALIDATION
   # =========================================================================
-validate-kubernetes:
+  validate-kubernetes:
     name: Validate Kubernetes Manifests
     runs-on: ubuntu-latest
-    needs: build-image
+    needs: build-images
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
