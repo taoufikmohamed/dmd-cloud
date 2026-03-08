@@ -142,7 +142,8 @@ jobs:
   # =========================================================================
 validate-kubernetes:
   name: Validate Kubernetes Manifests
-  runs-on: ubuntu-l steps:
+  runs-on: ubuntu-latest
+  steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
