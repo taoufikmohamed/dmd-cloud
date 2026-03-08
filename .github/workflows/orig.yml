@@ -161,8 +161,13 @@ jobs:
         run: |
           kubeval --skip-kinds CustomResourceDefinition --ignore-missing-schemas ./k8s/*.yaml
 
-      - name: Validate webhook-deployment.yaml
-        run: kubeval k8s/webhook-deployment.yaml
+   
+      # In your workflow definition (.github/workflows/orig.yml)
+      - name: Validate deployment
+        run: |
+          kubeval k8s/webhook-deployment.yaml --schema-location=https://github.com/instrumenta/kubernetes-json-schema/blob/master
+          # OR point to local copy:
+          kubeval k8s/webhook-deployment.yaml --schema-location=file://./schemas
 
       - name: Validate ai-deployment.yaml
         run: kubeval k8s/ai-deployment.yaml
