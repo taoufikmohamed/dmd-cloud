@@ -154,6 +154,9 @@ jobs:
           tar xf kubeval-linux-amd64.tar.gz
           sudo mv kubeval /usr/local/bin
 
+      - name: Validate Kubernetes manifests
+        run: kubeval --skip-missing-schemas k8s/webhook-deployment.yaml
+
       - name: Validate k8s manifests
         run: |
           kubeval --skip-kinds CustomResourceDefinition --ignore-missing-schemas ./k8s/*.yaml
