@@ -1,9 +1,10 @@
-name: "CodeQL"
+name: CodeQL Analysis
 on:
   push:
-    branches: [ taoufikmohamed-patch-11 ]
+    branches: [ master ]
   pull_request:
-    branches: [ taoufikmohamed-patch-11 ]
+    branches: [ master ]
+  workflow_dispatch: 
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -11,5 +12,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v3
         with:
-          languages: javascript # or your project's language
+          languages: python
       - uses: github/codeql-action/analyze@v3
