@@ -162,7 +162,8 @@ jobs:
           sudo mkdir -p /usr/local/share/kubeval-schemas/master-standalone
           sudo curl -L -o /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json \
             https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.18.0-standalone/deployment-apps-v1.json
-          chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
+          sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
+
      
 
       
