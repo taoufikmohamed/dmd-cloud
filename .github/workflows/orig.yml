@@ -359,26 +359,20 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const github = require('@actions/github');
-            const core = require('@actions/core');
             const token = core.getInput('github-token');
-            const octokit = new github.GitHub(token);
-            
-            // Properly fetch statuses:
+            const octokit = github.getOctokit(token);
+      
+            // Get combined status for the current commit
             const { data } = await octokit.repos.getCombinedStatusForRef({
-              owner: github.context.repo.owner,
-              repo: github.context.repo.repo,
-              ref: github.context.sha
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha
             });
-            const { data } = await github.repos.getCombinedStatusForRef({
-                          owner: context.repo.owner,
-                          repo: context.repo.repo,
-                          ref: context.sha
-                        });
-                        if (!data.statuses.some(s => s.context.includes('CodeQL') && s.state === 'success')) {
-                          throw new Error('CodeQL checks not passed yet.');
-                        }
-
+      
+            // Check that CodeQL checks passed
+            if (!data.statuses.some(s => s.context.includes('CodeQL') && s.state === 'success')) {
+              throw new Error('CodeQL checks not passed yet.');
+            }
       - name: Generate workflow documentation
         run: |
           cat > WORKFLOW.md << 'EOF'
