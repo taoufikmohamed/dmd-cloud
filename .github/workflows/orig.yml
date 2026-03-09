@@ -140,6 +140,9 @@ jobs:
   # =========================================================================
   # KUBERNETES DEPLOYMENT VALIDATION
   # =========================================================================
+  # =========================================================================
+  # KUBERNETES DEPLOYMENT VALIDATION
+  # =========================================================================
   validate-kubernetes:
     name: Validate Kubernetes Manifests
     runs-on: ubuntu-latest
@@ -147,41 +150,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-  
-      - name: Install kubeval
-        run: |
-          curl -LO https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
-          tar -xzf kubeval-linux-amd64.tar.gz
-          sudo mv kubeval /usr/local/bin/
-  
-      - name: Show schema validation tool path
-        run: which kubeval
 
-     
-      - name: Download kubeval standalone schemas
+      - name: Install Kubeconform
         run: |
-          sudo mkdir -p /usr/local/share/kubeval-schemas/master-standalone
-      
-          sudo wget -q -O /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json \
-            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
-      
-          sudo wget -q -O /usr/local/share/kubeval-schemas/master-standalone/service-v1.json \
-            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
-      
-          sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/*.json
-        
+          curl -L https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
 
-      
-      - name: Run kubeval locally
-        run: |
-      
-             kubeval --schema-location file:///usr/local/share/kubeval-schemas/master-standalone k8s/webhook-deployment.yaml
-  
       - name: Validate Kubernetes manifests
         run: |
-          kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
+          # Validate individual files
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.0 k8s/webhook-deployment.yaml
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.0 k8s/ai-deployment.yaml
+          
+          # Validate all files in production directory
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.0 k8s/production/
        #       uses: actions/checkout@v4
 
   #     - name: Install kubeval
