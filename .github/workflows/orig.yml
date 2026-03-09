@@ -158,9 +158,9 @@ jobs:
 
       - name: Validate Kubernetes manifests
         run: |
-          kubeconform -summary -ignore-missing-schemas -kubernetes-version v1.27.2 k8s/webhook-deployment.yaml
-          kubeconform -summary -ignore-missing-schemas -kubernetes-version v1.27.2 k8s/ai-deployment.yaml
-          kubeconform -summary -ignore-missing-schemas -kubernetes-version v1.27.2 k8s/production/
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.2 k8s/webhook-deployment.yaml
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.2 k8s/ai-deployment.yaml
+          kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.2 k8s/production/
           
           # Validate all files in production directory
           kubeconform -summary -ignore-missing-schemas -kubernetes-version 1.27.2 k8s/production/
@@ -266,7 +266,7 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@latest
         with:
-          kubernetes-version: vv1.27.2  # Change from v1.27.0 to vv1.27.2 or another supported version
+          kubernetes-version: 1.27.2  # Change from v1.27.0 to 1.27.2 or another supported version
           driver: docker
           memory: 4096
           cpus: 2
