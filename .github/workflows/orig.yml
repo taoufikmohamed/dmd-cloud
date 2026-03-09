@@ -172,10 +172,9 @@ jobs:
   
       - name: Validate Kubernetes manifests
         run: |
-          kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
-       #       uses: actions/checkout@v4
+          kubeval --schema-location https://kubernetesjsonschema.dev/ k8s/webhook-deployment.yaml
+          kubeval --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
+          kubeval --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
 
   #     - name: Install kubeval
   #       run: |
