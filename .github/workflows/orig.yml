@@ -156,8 +156,7 @@ jobs:
   
       - name: Show schema validation tool path
         run: which kubeval
-      - name: Fix kubeval schema permissions
-        run: sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
+
      
       - name: Download kubeval standalone schemas
         run: |
