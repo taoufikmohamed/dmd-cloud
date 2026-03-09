@@ -156,23 +156,23 @@ jobs:
   
       - name: Show schema validation tool path
         run: which kubeval
-
-     
+  
       - name: Download kubeval standalone schemas
         run: |
-          mkdir -p schemas/master-standalone
-          wget -O schemas/master-standalone/deployment-apps-v1.json https://github.com/instrumenta/kubernetes-json-schema/tree/master
-          wget -O schemas/master-standalone/service-v1.json https://github.com/instrumenta/kubernetes-json-schema/tree/master
-
+          sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
+          mkdir -p /usr/local/share/kubeval-schemas/master-standalone
+          wget -O /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
+          wget -O /usr/local/share/kubeval-schemas/master-standalone/service-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
+  
       - name: Run kubeval locally
-        run: kubeval --schema-location file://$(pwd)/schemas k8s/webhook-deployment.yaml
+        run: kubeval --schema-location file:///usr/local/share/kubeval-schemas k8s/webhook-deployment.yaml
   
       - name: Validate Kubernetes manifests
         run: |
           kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
           kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
           kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
-       #       uses: actions/checkout@v4
+         #       uses: actions/checkout@v4
 
   #     - name: Install kubeval
   #       run: |
