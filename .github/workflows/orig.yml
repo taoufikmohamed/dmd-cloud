@@ -161,8 +161,8 @@ jobs:
       - name: Download kubeval standalone schemas
         run: |
           mkdir -p schemas/master-standalone
-          wget -O schemas/master-standalone/deployment-apps-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
-          wget -O schemas/master-standalone/service-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
+          wget -O schemas/master-standalone/deployment-apps-v1.json https://github.com/instrumenta/kubernetes-json-schema/tree/master
+          wget -O schemas/master-standalone/service-v1.json https://github.com/instrumenta/kubernetes-json-schema/tree/master
 
       - name: Run kubeval locally
         run: kubeval --schema-location file://$(pwd)/schemas k8s/webhook-deployment.yaml
