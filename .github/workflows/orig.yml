@@ -173,13 +173,7 @@ jobs:
           sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
           sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/service-v1.json
 
-      - name: Download kubeval standalone schemas
-        run: |
-          mkdir -p .kubeval-schemas/master-standalone
-          wget -O .kubeval-schemas/master-standalone/deployment-apps-v1.json \
-            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
-          wget -O .kubeval-schemas/master-standalone/service-v1.json \
-            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
+
 
       - name: Run kubeval locally
         run: kubeval --schema-location file://$PWD/.kubeval-schemas k8s/webhook-deployment.yaml
