@@ -156,16 +156,14 @@ jobs:
   
       - name: Show schema validation tool path
         run: which kubeval
-  
-      - name: Download kubeval standalone schemas
+
+      - name: Download kubeval schemas
         run: |
-          sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
           mkdir -p /usr/local/share/kubeval-schemas/master-standalone
-          wget -O /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
-          wget -O /usr/local/share/kubeval-schemas/master-standalone/service-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
-  
-      - name: Run kubeval locally
-        run: kubeval --schema-location file:///usr/local/share/kubeval-schemas k8s/webhook-deployment.yaml
+          curl -o /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json \
+            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
+            - name: Run kubeval locally
+              run: kubeval --schema-location file:///usr/local/share/kubeval-schemas k8s/webhook-deployment.yaml
   
       - name: Validate Kubernetes manifests
         run: |
