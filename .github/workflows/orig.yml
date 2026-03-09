@@ -172,15 +172,19 @@ jobs:
           wget -O /usr/local/share/kubeval-schemas/master-standalone/service-v1.json https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
           sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/deployment-apps-v1.json
           sudo chmod 644 /usr/local/share/kubeval-schemas/master-standalone/service-v1.json
-      
-      - name: Run kubeval locally
-        run: kubeval --schema-location file:///usr/local/share/kubeval-schemas k8s/webhook-deployment.yaml
-  
-      - name: Validate Kubernetes manifests
+
+      - name: Download kubeval standalone schemas
         run: |
-          kubeval --ignore-missing-schemas k8s/webhook-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/ai-deployment.yaml
-          kubeval --ignore-missing-schemas --schema-location https://kubernetesjsonschema.dev/ k8s/production/*.yaml
+          mkdir -p .kubeval-schemas/master-standalone
+          wget -O .kubeval-schemas/master-standalone/deployment-apps-v1.json \
+            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/deployment-apps-v1.json
+          wget -O .kubeval-schemas/master-standalone/service-v1.json \
+            https://raw.githubusercontent.com/instrumenta/kubernetes-json-schema/master/v1.27.0-standalone/service-v1.json
+
+      - name: Run kubeval locally
+        run: kubeval --schema-location file://$PWD/.kubeval-schemas k8s/webhook-deployment.yaml
+                
+
        #       uses: actions/checkout@v4
 
   #     - name: Install kubeval
