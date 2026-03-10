@@ -360,17 +360,21 @@ jobs:
         with:
           script: |
             const token = core.getInput('github-token');
-           
+            const octokit = github.getOctokit(token);
 
             // Get combined status for the current commit
-            const { data } = await octokit.repos.getCombinedStatusForRef({
+            const { data } = await octokit.rest.repos.getCombinedStatusForRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: context.sha
             });
-      
+
+            if (!data || !Array.isArray(data.statuses)) {
+              throw new Error('Unable to read combined statuses for ref.');
+            }
+
             // Check that CodeQL checks passed
-            if (!data.statuses.some(s => s.context.includes('CodeQL') && s.state === 'success')) {
+            if (!data.statuses.some(s => s.context?.includes('CodeQL') && s.state === 'success')) {
               throw new Error('CodeQL checks not passed yet.');
             }
       - name: Generate workflow documentation
