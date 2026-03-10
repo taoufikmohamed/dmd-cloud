@@ -359,8 +359,14 @@ jobs:
         with:
           script: |
             const token = core.getInput('github-token');
-            // Declare octokit ONLY once
-            const octokit = github.getOctokit(token);
+            if (typeof octokit === "undefined") {
+              const octokit = github.getOctokit(token);
+            }
+            // ...rest of your code...
+            
+            # const token = core.getInput('github-token');
+            # // Declare octokit ONLY once
+            # const octokit = github.getOctokit(token);
             // Get combined status for the current commit
             const { data } = await octokit.rest.repos.getCombinedStatusForRef({
               owner: context.repo.owner,
