@@ -359,9 +359,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            
+            const token = core.getInput('github-token');
             const octokit = github.getOctokit(token);
-            // const token = core.getInput('github-token');
             // Get combined status for the current commit
             const { data } = await octokit.repos.getCombinedStatusForRef({
               owner: context.repo.owner,
