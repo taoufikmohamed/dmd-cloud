@@ -13,9 +13,11 @@ name: "CodeQL Advanced"
 
 on:
   push:
-    branches: [ "master" ]
+    #branches: [ "master" ]
+    branches: [ "**" ] # Makes sure it runs on all branches
   pull_request:
-    branches: [ "master" ]
+    branches: [ "**" ] # Makes sure it runs on all branches
+    #branches: [ "master" ]
   schedule:
     - cron: '31 13 * * 4'
 
