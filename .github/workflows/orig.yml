@@ -76,7 +76,8 @@ jobs:
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3 # Updated to v3
-        languages: python # Specify languages explicitly for faster execution
+        with:
+         languages: python # Specify languages explicitly for faster execution
 
 
       - name: Perform CodeQL Analysis
