@@ -358,64 +358,76 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // First, list all check runs to debug
-            console.log('Fetching all check runs for this commit...');
+            const maxRetries = 30;
+            const retryDelay = 10000; // 10 seconds
             
-            const { data: checksData } = await github.rest.checks.listForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha
-            });
-            
-            console.log(`Found ${checksData.total_count} total check runs:`);
-            
-            // Log all check names for debugging
-            const checkNames = checksData.check_runs.map(check => ({
-              name: check.name,
-              status: check.status,
-              conclusion: check.conclusion
-            }));
-            
-            console.log('Available checks:');
-            checkNames.forEach(check => {
-              console.log(`- ${check.name} (${check.status}, ${check.conclusion || 'pending'})`);
-            });
-            
-            // Look for CodeQL checks (case-insensitive)
-            const codeqlChecks = checksData.check_runs.filter(check => 
-              check.name.toLowerCase().includes('codeql')
-            );
-            
-            if (codeqlChecks.length === 0) {
-              throw new Error('No CodeQL checks found. Available checks: ' + 
-                JSON.stringify(checkNames.map(c => c.name)));
-            }
-            
-            console.log(`Found ${codeqlChecks.length} CodeQL-related checks`);
-            
-            // Check each CodeQL check
-            const incompleteChecks = [];
-            const failedChecks = [];
-            
-            for (const check of codeqlChecks) {
-              console.log(`Checking: ${check.name} - Status: ${check.status}, Conclusion: ${check.conclusion}`);
-              
-              if (check.status !== 'completed') {
-                incompleteChecks.push(check.name);
-              } else if (check.conclusion !== 'success') {
-                failedChecks.push(`${check.name} (${check.conclusion})`);
+            for (let i = 0; i < maxRetries; i++) {
+              try {
+                // Get all check runs
+                const { data: checksData } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: context.sha
+                });
+                
+                // Look for checks that are likely CodeQL (analyze checks)
+                const codeqlChecks = checksData.check_runs.filter(check => 
+                  check.name === 'analyze' || 
+                  check.name.startsWith('Analyze') ||
+                  check.name.includes('CodeQL')
+                );
+                
+                if (codeqlChecks.length === 0) {
+                  if (i < maxRetries - 1) {
+                    console.log(`No CodeQL checks found yet. Retry ${i + 1}/${maxRetries}...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    continue;
+                  } else {
+                    throw new Error('No CodeQL checks found after all retries.');
+                  }
+                }
+                
+                console.log(`Found ${codeqlChecks.length} CodeQL checks:`);
+                
+                const incompleteChecks = [];
+                const failedChecks = [];
+                
+                for (const check of codeqlChecks) {
+                  console.log(`- ${check.name}: Status=${check.status}, Conclusion=${check.conclusion || 'pending'}`);
+                  
+                  if (check.status !== 'completed') {
+                    incompleteChecks.push(check.name);
+                  } else if (check.conclusion !== 'success') {
+                    failedChecks.push(`${check.name} (${check.conclusion})`);
+                  }
+                }
+                
+                if (incompleteChecks.length > 0) {
+                  if (i < maxRetries - 1) {
+                    console.log(`CodeQL checks still in progress: ${incompleteChecks.join(', ')}. Retry ${i + 1}/${maxRetries}...`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    continue;
+                  } else {
+                    throw new Error(`CodeQL checks still in progress after all retries: ${incompleteChecks.join(', ')}`);
+                  }
+                }
+                
+                if (failedChecks.length > 0) {
+                  throw new Error(`CodeQL checks failed: ${failedChecks.join(', ')}`);
+                }
+                
+                console.log('All CodeQL checks completed successfully!');
+                return; // Success!
+                
+              } catch (error) {
+                if (error.message.includes('No CodeQL checks found') || 
+                    error.message.includes('still in progress')) {
+                  // Continue to next retry
+                  continue;
+                }
+                throw error; // Rethrow unexpected errors
               }
             }
-            
-            if (incompleteChecks.length > 0) {
-              throw new Error(`CodeQL checks still in progress: ${incompleteChecks.join(', ')}`);
-            }
-            
-            if (failedChecks.length > 0) {
-              throw new Error(`CodeQL checks failed: ${failedChecks.join(', ')}`);
-            }
-            
-            console.log('All CodeQL checks completed successfully!');
             
       - name: Generate workflow documentation
         run: |
