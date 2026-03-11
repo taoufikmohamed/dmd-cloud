@@ -431,6 +431,21 @@ jobs:
                 throw error; // Rethrow unexpected errors
               }
             }
+
+      - name: Wait for CodeQL scan to complete
+        run: |
+          while true; do
+            STATUS=$(gh api repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs --jq '.check_runs[] | select(.name == "CodeQL") | .conclusion')
+            if [[ "$STATUS" == "success" ]]; then
+              break
+            elif [[ "$STATUS" == "failure" ]]; then
+              echo "CodeQL scan failed."
+              exit 1
+            else
+              echo "Waiting for CodeQL scan..."
+              sleep 30
+            fi
+          done
             
       - name: Generate workflow documentation
         run: |
