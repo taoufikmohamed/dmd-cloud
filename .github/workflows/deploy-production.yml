@@ -7,9 +7,9 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 env:
-  AZURE_RESOURCE_GROUP: dmd-prod-rg
+  AZURE_RESOURCE_GROUP: RG-ACR
   AKS_CLUSTER_NAME: dmd-aks-prod
-  ACR_NAME: dmdacrprod
+  ACR_NAME: dmdacr
   NAMESPACE: dmd-production
 
 jobs:
