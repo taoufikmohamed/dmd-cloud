@@ -109,7 +109,7 @@ $manifestFiles = @(
 
 foreach ($file in $manifestFiles) {
     $content = Get-Content $file -Raw
-    $content = $content -replace 'dmdacrprod\.azurecr\.io', $acrServer
+    $content = $content -replace 'dmdacr\.azurecr\.io', $acrServer
     Set-Content $file -Value $content
     Write-Host "  ✓ Updated $file" -ForegroundColor Gray
 }
