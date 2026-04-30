@@ -71,7 +71,7 @@ kubectl get nodes
 
 ```powershell
 # Navigate to project directory
-cd c:\Users\tosim\dmd-cloud-project
+cd $pathTo\dmd-cloud-project
 
 # Run the complete workflow
 .\run-workflow.ps1 -DeepSeekAPIKey "sk-your-api-key-here"
